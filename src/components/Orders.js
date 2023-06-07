@@ -1,40 +1,50 @@
 import React from "react";
-import axios from "axios";
-import pako from 'pako';
+import axios from 'axios';
+import pako from "pako";
+import zlib from 'zlib';
+// import compressionInterceptor from "../utils/myInterceptor";
 
 function Orders() {
     const [orders, setOrders] = React.useState([]);
-    const token = "AQIC5wM2LY4SfczW6MVQxmocNf6sg0TF9e05jXRkIRgKJa4.*AAJTSQACMDE.*";
-    const url = "http://localhost:3000/order_sets/find.json?id=27117&token="+token;
+    const token = "AQIC5wM2LY4Sfcx7JADZclhgPTcQIGpm8E3xefQZjqidt0Q.*AAJTSQACMDE.*";
+    const url = "http://localhost:3001/reports/test_compression.json?token="+token;
     const headers = {
         "Compressed": true,
         "Content-Type": "text/plain",
     };
     let data = {id: 21, name: 'Khalid', age: 35, status: 'Married'};
     const compressedData = compressData(data);
-
-    React.useEffect(() => {
-        axios.get(url, {
-            headers: headers,
-            responseType: 'blob',
-        })
-            .then((response) => {
+    const fetchData = async () => {
+        try {
+            const response = await axios.post(url, compressedData, {
+                headers: headers,
+                responseType: 'blob'
+            });
+            if (response.headers['content-type'] === 'application/octet-stream') {
                 const reader = new FileReader();
                 reader.onload = () => {
                     const compressedData = reader.result;
+                    console.log(compressedData);
                     const uncompressedData = decompressData(compressedData);
-                    console.log(uncompressedData.target[0]);
-                    setOrders(uncompressedData.target[0]);
+                    response.data = JSON.parse(uncompressedData.target[0]);
+                    console.log('====== DATA=======');
+                    console.log(response.data);
                 };
+                console.log("====== BEFORE=====");
+                console.log(response.data);
                 reader.readAsArrayBuffer(response.data);
-            })
-            .catch((error) => {
-                console.log(error);
-            });
-    }, []);
+                console.log(" ====== INTERCEPTOR: ");
+                console.log(response.data);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
 
     return (
         <div>
+            <button onClick={fetchData}>Fetch Data</button>
             <h2>Response</h2>
             <p>{orders}</p>
         </div>
@@ -43,7 +53,7 @@ function Orders() {
 
 function compressData(data) {
     const jsonString = JSON.stringify(data);
-    const compressedData = pako.deflate(jsonString, { level: 9 });
+    const compressedData = zlib.deflateSync(jsonString).toString('base64');
     return compressedData;
 }
 
