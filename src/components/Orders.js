@@ -30,11 +30,7 @@ function Orders() {
                     console.log('====== DATA=======');
                     console.log(response.data);
                 };
-                console.log("====== BEFORE=====");
-                console.log(response.data);
                 reader.readAsArrayBuffer(response.data);
-                console.log(" ====== INTERCEPTOR: ");
-                console.log(response.data);
             }
         } catch (error) {
             console.log(error);
